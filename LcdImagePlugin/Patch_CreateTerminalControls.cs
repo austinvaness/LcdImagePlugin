@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Gui;
+using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
@@ -56,6 +57,9 @@ namespace avaness.LcdImagePlugin
 
         private static void ButtonAction(MyTextPanel panel)
         {
+            if (MySession.Static != null && MySession.Static.Players.GetOnlinePlayerCount() > 1)
+                return;
+
             Form form = GetMainForm();
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.Filter = GetFilter();
