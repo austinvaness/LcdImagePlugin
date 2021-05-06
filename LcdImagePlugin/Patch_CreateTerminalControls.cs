@@ -4,17 +4,15 @@ using Sandbox.Game.Gui;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using VRage.Utils;
-using VRageMath;
+using Sandbox;
+using System.Threading;
 
 namespace avaness.LcdImagePlugin
 {
@@ -57,26 +55,34 @@ namespace avaness.LcdImagePlugin
 
         private static void ButtonAction(MyTextPanel panel)
         {
-            if (MySession.Static != null && MySession.Static.Players.GetOnlinePlayerCount() > 1)
-                return;
-
+            Size size = GetPanelSize(panel);
             Form form = GetMainForm();
+
+            Thread t = new Thread(new ThreadStart(() => OpenImageDialog(panel, size, form)));
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+        }
+
+        private static void OpenImageDialog(MyTextPanel panel, Size size, Form form)
+        {
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.Filter = GetFilter();
             if (dialog.ShowDialog(form) == DialogResult.OK && File.Exists(dialog.FileName))
             {
                 try
                 {
-                    IMyTextSurface surface = panel;
-                    surface.ContentType = VRage.Game.GUI.TextPanel.ContentType.TEXT_AND_IMAGE;
-                    surface.FontSize = panel.BlockDefinition.MinFontSize;
-                    surface.Font = "Monospace";
-                    surface.TextPadding = 0;
-                    WriteImage(Resize(Image.FromFile(dialog.FileName), GetPanelSize(panel)), panel);
+                    WriteImage(Resize(Image.FromFile(dialog.FileName), size), panel);
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show(GetMainForm(), "Error while processing image: " + e.ToString());
+                    MySandboxGame.Static.Invoke(() => {
+                        try
+                        {
+                            MyLog.Default.WriteLine("Error while processing image: " + e.ToString());
+                            MyHud.Notifications.Add(new MyHudNotification(MyStringId.GetOrCompute("Error while processing image: " + e.GetType()), 5000, "White"));
+                        }
+                        catch { }
+                    }, "LcdImagePlugin");
                 }
             }
         }
@@ -113,7 +119,7 @@ namespace avaness.LcdImagePlugin
         {
             StringBuilder sb = new StringBuilder();
 
-            System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, img.Width, img.Height);
+            Rectangle rect = new Rectangle(0, 0, img.Width, img.Height);
             BitmapData data = img.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
 
             int size = data.Stride * img.Height;
@@ -133,7 +139,20 @@ namespace avaness.LcdImagePlugin
                 sb.AppendLine();
             }
 
-            ((IMyTextSurface)panel).WriteText(sb);
+            MySandboxGame.Static.Invoke(() => WriteImageText(sb, panel), "LcdImagePlugin");
+        }
+
+        private static void WriteImageText(StringBuilder sb, MyTextPanel panel)
+        {
+            if (MySession.Static != null && !panel.MarkedForClose && !panel.Closed && panel.IsFunctional)
+            {
+                IMyTextSurface surface = panel;
+                surface.ContentType = VRage.Game.GUI.TextPanel.ContentType.TEXT_AND_IMAGE;
+                surface.FontSize = panel.BlockDefinition.MinFontSize;
+                surface.Font = "Monospace";
+                surface.TextPadding = 0;
+                surface.WriteText(sb);
+            }
         }
 
         private static char GetPixel(int r, int g, int b)

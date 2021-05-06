@@ -1,6 +1,4 @@
 ﻿using HarmonyLib;
-using Sandbox.Game.Entities.Blocks;
-using System.Reflection;
 using VRage.Plugins;
 
 namespace avaness.LcdImagePlugin
