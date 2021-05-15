@@ -71,7 +71,9 @@ namespace avaness.LcdImagePlugin
             {
                 try
                 {
-                    WriteImage(Resize(Image.FromFile(dialog.FileName), size), panel);
+                    Image img = Image.FromFile(dialog.FileName);
+                    Bitmap bmp = Resize(img, size);
+                    WriteImage(bmp, panel);
                 }
                 catch (Exception e)
                 {
@@ -79,7 +81,7 @@ namespace avaness.LcdImagePlugin
                         try
                         {
                             MyLog.Default.WriteLine("Error while processing image: " + e.ToString());
-                            MyHud.Notifications.Add(new MyHudNotification(MyStringId.GetOrCompute("Error while processing image: " + e.GetType()), 5000, "White"));
+                            MyHud.Notifications.Add(new MyHudNotification(MyStringId.GetOrCompute("Error while processing image: " + e.GetType().Name + ". Check game log file."), 5000, "White"));
                         }
                         catch { }
                     }, "LcdImagePlugin");
@@ -89,17 +91,26 @@ namespace avaness.LcdImagePlugin
 
         private static Size GetPanelSize(MyTextPanel panel)
         {
+            Size size;
             switch (panel.BlockDefinition.Id.SubtypeName)
             {
                 case "LargeLCDPanel5x3":
                 case "LargeTextPanel":
-                    return new Size(178, 107);
+                    size = new Size(178, 107);
+                    break;
                 case "SmallLCDPanelWide":
                 case "LargeLCDPanelWide":
-                    return new Size(356, 178);
+                    size = new Size(356, 178);
+                    break;
                 default:
-                    return new Size(178, 178);
+                    size = new Size(178, 178);
+                    break;
             }
+
+            int rotation = panel.SelectedRotationIndex;
+            if (rotation % 2 == 1)
+                return new Size(size.Height, size.Width);
+            return size;
         }
 
         private static Form GetMainForm()
@@ -112,6 +123,8 @@ namespace avaness.LcdImagePlugin
 
         private static Bitmap Resize(Image img, Size size)
         {
+            if (size.Width <= 0 || size.Height <= 0)
+                return new Bitmap(img);
             return new Bitmap(img, size);
         }
 
