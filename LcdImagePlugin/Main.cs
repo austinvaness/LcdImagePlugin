@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Reflection;
 using VRage.Plugins;
 
 namespace avaness.LcdImagePlugin
@@ -12,8 +13,7 @@ namespace avaness.LcdImagePlugin
 
         public void Init(object gameInstance)
         {
-            Harmony harmony = new Harmony("LcdImagePlugin");
-            harmony.PatchAll();
+            new Harmony("avaness.LcdImagePlugin").PatchAll(Assembly.GetExecutingAssembly());
         }
 
         public void Update()
