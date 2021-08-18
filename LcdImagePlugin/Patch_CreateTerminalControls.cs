@@ -29,6 +29,7 @@ namespace avaness.LcdImagePlugin
 
             StringBuilder sb = new StringBuilder();
             sb.Append("Image Files|");
+
             foreach(var codec in ImageCodecInfo.GetImageEncoders())
                 sb.Append(codec.FilenameExtension).Append(';');
             filter = sb.ToString();
