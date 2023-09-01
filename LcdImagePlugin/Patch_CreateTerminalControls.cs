@@ -13,6 +13,7 @@ using System.Windows.Forms;
 using VRage.Utils;
 using Sandbox;
 using System.Threading;
+using Sandbox.ModAPI.Interfaces;
 
 namespace avaness.LcdImagePlugin
 {
@@ -108,9 +109,13 @@ namespace avaness.LcdImagePlugin
                     break;
             }
 
-            int rotation = panel.SelectedRotationIndex;
-            if (rotation % 2 == 1)
-                return new Size(size.Height, size.Width);
+            var prop = panel.GetProperty("Rotate");
+            if(prop != null && prop.Is<float>())
+            {
+                int rotation = (int)(prop.AsFloat().GetValue(panel) / 90f);
+                if (rotation % 2 == 1)
+                    return new Size(size.Height, size.Width);
+            }
             return size;
         }
 
